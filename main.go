@@ -22,14 +22,28 @@ func main() {
 	/******************************************
 		Get details for a specific action ID
 	*******************************************/
+	//fmt.Println("\tAction ID:", actions.Actions[0].Id)
 	_, action := do.GetAction(actions.Actions[0].Id)
 	displayMethodInfo("Action Details", map[string]interface{}{"history": action})
 
 	/******************************************
 		Get list of domain records
 	*******************************************/
-	_, domain_records := do.GetDomainRecords()
+	_, domain_records := do.GetDomainRecords("whatsmydevice.mobi")
 	displayMethodInfo("Domain Records List", map[string]interface{}{"domain records": domain_records})
+
+	/******************************************
+		Create a new domain record
+	*******************************************/
+	/*
+		dr := &digitalocean.DomainRecord{
+			Name: "devlocal",
+			Data: "127.0.0.1",
+			Type: "A",
+		}
+		_, new_domain_record := do.CreateDomainRecord(dr)
+		displayMethodInfo("New Domain Record", map[string]interface{}{"domain records": new_domain_record})
+	*/
 
 	/******************************************
 		Get a list of active droplets

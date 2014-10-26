@@ -10,7 +10,7 @@ type DropletsMeta struct {
 }
 
 type Droplet struct {
-	Id          int32               `json:"id"`
+	Id          int                 `json:"id"`
 	Name        string              `json:"name"`
 	Memory      int                 `json:"memory"`
 	Vcpus       int                 `json:"vcpus"`
@@ -37,7 +37,7 @@ type DropletRegion struct {
 }
 
 type DropletImage struct {
-	Id           uint32   `json:"id"`
+	Id           int      `json:"id"`
 	Name         string   `json:"name"`
 	Distribution string   `json:"distribution"`
 	Slug         string   `json:"slug"`
