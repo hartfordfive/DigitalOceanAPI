@@ -30,9 +30,11 @@ func NewClient(api_token string) (c *DigitalOceanClient) {
 			"action_history": {"GET", "actions"},
 			"action_details": {"GET", "actions/%d"},
 
-			"domain_records":    {"GET", "domains/%s/records"},
-			"add_domain_record": {"POST", "domains/%s/records"},
-			"get_domain_record": {"GET", "domains/%s/records/%d"},
+			"domain_records":       {"GET", "domains/%s/records"},
+			"add_domain_record":    {"POST", "domains/%s/records"},
+			"get_domain_record":    {"GET", "domains/%s/records/%d"},
+			"delete_domain_record": {"DELETE", "domains/%s/records/%d"},
+			"update_domain_record": {"PUT", "domains/%s/records/%d"},
 
 			"show_droplet":           {"GET", "droplets/%d"},
 			"list_droplets":          {"GET", "droplets"},
@@ -94,6 +96,21 @@ func (c *DigitalOceanClient) doRequest(method string, request_headers map[string
 		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(string), params[1].(int))
 		req, _ = http.NewRequest(c.Methods[method][0], url, bytes.NewBuffer([]byte(``)))
 
+	case num_params == 2 && method == "delete_domain_record":
+
+		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(string), params[1].(int))
+		req, _ = http.NewRequest(c.Methods[method][0], url, bytes.NewBuffer([]byte(``)))
+
+	case num_params == 1 && method == "update_domain_record":
+
+		jsonStr, err := json.Marshal(params[2])
+		if err != nil {
+			fmt.Println("JSON Encoding Error:", err)
+			return "000", []byte(`{}`)
+		}
+		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(string), params[1].(int))
+		req, _ = http.NewRequest(c.Methods[method][0], url, bytes.NewBuffer(jsonStr))
+
 	case num_params == 1 && method == "list_droplet_kernels":
 
 		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(int))
@@ -115,14 +132,14 @@ func (c *DigitalOceanClient) doRequest(method string, request_headers map[string
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	return resp.Status, body
+	return resp.Status, resp.Header, body
 }
 
 func (c *DigitalOceanClient) GetActionHistory() (status string, result Actions) {
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token}
-	status, body := c.doRequest("action_history", headers)
+	status, headers, body := c.doRequest("action_history", headers)
 
 	var json_resp Actions
 	json.Unmarshal(body, &json_resp)
@@ -134,7 +151,7 @@ func (c *DigitalOceanClient) GetAction(action_id int) (status string, result Act
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token}
-	status, body := c.doRequest("action_details", headers, action_id)
+	status, headers, body := c.doRequest("action_details", headers, action_id)
 
 	var json_resp Action
 	json.Unmarshal(body, &json_resp)
@@ -148,7 +165,7 @@ func (c *DigitalOceanClient) GetDomainRecords(domain string) (status string, res
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token}
-	status, body := c.doRequest("domain_records", headers, domain)
+	status, headers, body := c.doRequest("domain_records", headers, domain)
 
 	var json_resp DomainRecords
 	json.Unmarshal(body, &json_resp)
@@ -159,8 +176,8 @@ func (c *DigitalOceanClient) GetDomainRecords(domain string) (status string, res
 func (c *DigitalOceanClient) CreateDomainRecord(r DomainRecord) (status string, result DomainRecords) {
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
-	headers := map[string]string{"Authorization": token}
-	status, body := c.doRequest("domain_records", headers)
+	headers := map[string]string{"Authorization": token, "Content-Type": "application/json"}
+	status, headers, body := c.doRequest("domain_records", headers)
 
 	var json_resp DomainRecords
 	json.Unmarshal(body, &json_resp)
@@ -168,13 +185,39 @@ func (c *DigitalOceanClient) CreateDomainRecord(r DomainRecord) (status string, 
 	return status, json_resp
 }
 
+/*
+func (c *DigitalOceanClient) GetDomainRecord(domain string, id int) (status string, result DomainRecords) {
+
+	token := fmt.Sprintf("Bearer %s", c.ApiToken)
+	headers := map[string]string{"Authorization": token}
+	status, headers, body := c.doRequest("get_domain_record", headers, domain, id)
+
+	var json_resp DomainRecord
+	json.Unmarshal(body, &json_resp)
+
+	return status, json_resp
+}
+
+func (c *DigitalOceanClient) DeleteDomainRecord(domain string, id int) () {
+
+	token := fmt.Sprintf("Bearer %s", c.ApiToken)
+	headers := map[string]string{"Authorization": token, "Content-Type": "application/x-www-form-urlencoded"}
+	status, headers, body := c.doRequest("get_domain_record", headers, domain, id)
+
+	var json_resp DomainRecord
+	json.Unmarshal(body, &json_resp)
+
+	return status, json_resp
+}
+*/
+
 // -------------------------------------------------------------
 
 func (c *DigitalOceanClient) GetDroplets() (status string, result Droplets) {
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token}
-	status, body := c.doRequest("list_droplets", headers)
+	status, headers, body := c.doRequest("list_droplets", headers)
 
 	var json_resp Droplets
 	json.Unmarshal(body, &json_resp)
@@ -188,7 +231,7 @@ func (c *DigitalOceanClient) GetKernels(droplet_id int) (status string, result K
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token}
-	status, body := c.doRequest("list_droplet_kernels", headers, droplet_id)
+	status, headers, body := c.doRequest("list_droplet_kernels", headers, droplet_id)
 
 	var json_resp Kernels
 	json.Unmarshal(body, &json_resp)

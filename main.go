@@ -46,6 +46,27 @@ func main() {
 	*/
 
 	/******************************************
+		Delete a domain record
+	*******************************************/
+	/*
+		_, deleted_record := do.DeleteDomainRecord("dev", 2456134)
+		displayMethodInfo("Deleted Domain Record", map[string]interface{}{"deleted domain record": deleted_record})
+	*/
+
+	/******************************************
+		Update a domain record
+	*******************************************/
+	/*
+		updated_dr := &digitalocean.DomainRecord{
+			Name: "devlocal",
+			Data: "127.0.0.10",
+			Type: "A",
+		}
+			_, updated_record := do.UpdateDomainRecord(updated_dr)
+			displayMethodInfo("Updated Domain Record", map[string]interface{}{"updated domain record": updated_record})
+	*/
+
+	/******************************************
 		Get a list of active droplets
 	*******************************************/
 	status_code, droplets := do.GetDroplets()
