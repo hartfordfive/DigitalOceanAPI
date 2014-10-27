@@ -16,20 +16,27 @@ func main() {
 	/******************************************
 		Get Action History
 	*******************************************/
-	_, actions := do.GetActionHistory()
-	displayMethodInfo("Action History", map[string]interface{}{"history": actions})
+	status_code, headers, actions := do.GetActionHistory()
+	displayMethodInfo("Action History", map[string]interface{}{
+		"status code:":      status_code,
+		"response headers:": headers,
+		"history:":          actions,
+	})
 
 	/******************************************
 		Get details for a specific action ID
 	*******************************************/
-	//fmt.Println("\tAction ID:", actions.Actions[0].Id)
-	_, action := do.GetAction(actions.Actions[0].Id)
-	displayMethodInfo("Action Details", map[string]interface{}{"history": action})
+	status_code, headers, action := do.GetAction(actions.Actions[0].Id)
+	displayMethodInfo("Action Details", map[string]interface{}{
+		"status code:":      status_code,
+		"response headers:": headers,
+		"action details":    action,
+	})
 
 	/******************************************
 		Get list of domain records
 	*******************************************/
-	_, domain_records := do.GetDomainRecords("whatsmydevice.mobi")
+	_, _, domain_records := do.GetDomainRecords("whatsmydevice.mobi")
 	displayMethodInfo("Domain Records List", map[string]interface{}{"domain records": domain_records})
 
 	/******************************************
@@ -41,7 +48,7 @@ func main() {
 			Data: "127.0.0.1",
 			Type: "A",
 		}
-		_, new_domain_record := do.CreateDomainRecord(dr)
+		_, _, new_domain_record := do.CreateDomainRecord(dr)
 		displayMethodInfo("New Domain Record", map[string]interface{}{"domain records": new_domain_record})
 	*/
 
@@ -49,7 +56,7 @@ func main() {
 		Delete a domain record
 	*******************************************/
 	/*
-		_, deleted_record := do.DeleteDomainRecord("dev", 2456134)
+		_, _, deleted_record := do.DeleteDomainRecord("dev", 2456134)
 		displayMethodInfo("Deleted Domain Record", map[string]interface{}{"deleted domain record": deleted_record})
 	*/
 
@@ -62,14 +69,58 @@ func main() {
 			Data: "127.0.0.10",
 			Type: "A",
 		}
-			_, updated_record := do.UpdateDomainRecord(updated_dr)
+			_, _, updated_record := do.UpdateDomainRecord(updated_dr)
 			displayMethodInfo("Updated Domain Record", map[string]interface{}{"updated domain record": updated_record})
 	*/
 
 	/******************************************
+		Get list of domains
+	*******************************************/
+	status_code, headers, domains := do.GetDomains()
+	displayMethodInfo("List Domains", map[string]interface{}{
+		"status code:":      status_code,
+		"response headers:": headers,
+		"domains":           domains,
+	})
+
+	/******************************************
+		Create a domain
+	*******************************************/
+	domain := &digitalocean.NewDomain{
+		Name:      "yourdomain.com",
+		IpAddress: "192.168.1.2",
+	}
+
+	status_code, headers, new_domain := do.CreateDomain(domain)
+	displayMethodInfo("Create Domain", map[string]interface{}{
+		"status code:":      status_code,
+		"response headers:": headers,
+		"domain creation":   new_domain,
+	})
+
+	/******************************************
+		Get domain details
+	*******************************************/
+	status_code, headers, domain := do.GetDomain("yourdomain.com")
+	displayMethodInfo("Domain Details", map[string]interface{}{
+		"status code:":      status_code,
+		"response headers:": headers,
+		"domain":            domain,
+	})
+
+	/******************************************
+		Delete domain
+	*******************************************/
+	status_code, headers := do.DeleteDomain("yourdomain.com")
+	displayMethodInfo("Delete Domain", map[string]interface{}{
+		"status code:":      status_code,
+		"response headers:": headers,
+	})
+
+	/******************************************
 		Get a list of active droplets
 	*******************************************/
-	status_code, droplets := do.GetDroplets()
+	status_code, _, droplets := do.GetDroplets()
 	displayMethodInfo("Active Droplet List", map[string]interface{}{
 		"Response Status Code": status_code,
 		"Total Droplets":       len(droplets.DropletList),
@@ -84,7 +135,7 @@ func main() {
 		Get a list of available kernels
 	*******************************************/
 
-	_, kernels := do.GetKernels(int(droplets.DropletList[0].Id))
+	_, _, kernels := do.GetKernels(int(droplets.DropletList[0].Id))
 	displayMethodInfo("Available Kernels", map[string]interface{}{"kernels": kernels})
 
 }
