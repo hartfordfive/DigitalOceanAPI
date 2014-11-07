@@ -13,5 +13,5 @@ type Domain struct {
 
 type NewDomain struct {
 	Name      string `json:"name"`
-	IpAddress int    `json:"ip_address"`
+	IpAddress string `json:"ip_address"`
 }

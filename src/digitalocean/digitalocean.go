@@ -50,6 +50,8 @@ func NewClient(api_token string) (c *DigitalOceanClient) {
 			"create_droplet":         {"POST", "droplets"},
 			"delete_droplet":         {"DELETE", "droplets/%d"},
 			"transfer_droplet":       {"POST", "images/%d/actions"},
+
+			"perform_droplet_action": {"POST", "droplets/%d/actions"},
 		},
 	}
 }
@@ -135,6 +137,17 @@ func (c *DigitalOceanClient) doRequest(method string, request_headers map[string
 
 		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(int))
 		req, _ = http.NewRequest(c.Methods[method][0], url, bytes.NewBuffer([]byte(``)))
+
+	case num_params == 2 && method == "perform_droplet_action":
+
+		jsonStr, err := json.Marshal(map[string]string{"type": params[1].(string)})
+		if err != nil {
+			fmt.Println("JSON Encoding Error:", err)
+			return "000", nil, []byte(`{}`)
+		}
+
+		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(int))
+		req, _ = http.NewRequest(c.Methods[method][0], url, bytes.NewBuffer(jsonStr))
 
 	default:
 		fmt.Println("\t*** Method unimplemented***")
@@ -245,7 +258,7 @@ func (c *DigitalOceanClient) GetDomains() (status string, resp_headers http.Head
 	return status, resp_headers, json_resp
 }
 
-func (c *DigitalOceanClient) CreateDomain(domain Domain) (status string, resp_headers http.Header, result Domain) {
+func (c *DigitalOceanClient) CreateDomain(domain NewDomain) (status string, resp_headers http.Header, result Domain) {
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token, "Content-Type": "application/json"}
@@ -261,7 +274,7 @@ func (c *DigitalOceanClient) GetDomain(domain string) (status string, resp_heade
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token}
-	status, resp_headers, body := c.doRequest("domain_details", headers, domain)
+	status, resp_headers, body := c.doRequest("get_domain", headers, domain)
 
 	var json_resp Domain
 	json.Unmarshal(body, &json_resp)
@@ -273,9 +286,29 @@ func (c *DigitalOceanClient) DeleteDomain(domain string) (status string, resp_he
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token, "Content-Type": "application/x-www-form-urlencoded"}
-	status, resp_headers, _ := c.doRequest("delete_domain", headers, domain)
+	status, resp_headers, _ = c.doRequest("delete_domain", headers, domain)
 
 	return status, resp_headers
+}
+
+// -------------------------- DROPLET ACTIONS -----------------------------------
+
+func (c *DigitalOceanClient) PerformDropletAction(droplet_id int, action string) (status string, resp_headers http.Header, result DropletAction) {
+
+	valid_actions := []string{
+		"disable_babckups", "reboot", "powercycle",
+		"shutdown", "poweroff", "poweron",
+		"", "",
+	}
+
+	token := fmt.Sprintf("Bearer %s", c.ApiToken)
+	headers := map[string]string{"Authorization": token, "Content-Type": "application/json"}
+	status, resp_headers, body := c.doRequest("perform_droplet_action", headers, droplet_id, action)
+
+	var json_resp DropletAction
+	json.Unmarshal(body, &json_resp)
+
+	return status, resp_headers, json_resp
 }
 
 // -------------------------------------------------------------

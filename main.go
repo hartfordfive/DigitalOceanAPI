@@ -86,17 +86,19 @@ func main() {
 	/******************************************
 		Create a domain
 	*******************************************/
-	domain := &digitalocean.NewDomain{
-		Name:      "yourdomain.com",
-		IpAddress: "192.168.1.2",
-	}
+	/*
+		domain_to_create := &digitalocean.NewDomain{
+			Name:      "yourdomain.com",
+			IpAddress: "192.168.1.2",
+		}
 
-	status_code, headers, new_domain := do.CreateDomain(domain)
-	displayMethodInfo("Create Domain", map[string]interface{}{
-		"status code:":      status_code,
-		"response headers:": headers,
-		"domain creation":   new_domain,
-	})
+		status_code, headers, new_domain := do.CreateDomain(*domain_to_create)
+		displayMethodInfo("Create Domain", map[string]interface{}{
+			"status code:":      status_code,
+			"response headers:": headers,
+			"domain creation":   new_domain,
+		})
+	*/
 
 	/******************************************
 		Get domain details
@@ -111,11 +113,13 @@ func main() {
 	/******************************************
 		Delete domain
 	*******************************************/
-	status_code, headers := do.DeleteDomain("yourdomain.com")
-	displayMethodInfo("Delete Domain", map[string]interface{}{
-		"status code:":      status_code,
-		"response headers:": headers,
-	})
+	/*
+		status_code, headers = do.DeleteDomain("yourdomain.com")
+		displayMethodInfo("Delete Domain", map[string]interface{}{
+			"status code:":      status_code,
+			"response headers:": headers,
+		})
+	*/
 
 	/******************************************
 		Get a list of active droplets
@@ -137,6 +141,13 @@ func main() {
 
 	_, _, kernels := do.GetKernels(int(droplets.DropletList[0].Id))
 	displayMethodInfo("Available Kernels", map[string]interface{}{"kernels": kernels})
+
+	/******************************************
+		Get a list of available kernels
+	*******************************************/
+
+	_, _, action_result := do.PerformDropletAction(int(droplets.DropletList[0].Id), "power_cycle")
+	displayMethodInfo("Droplet Action - Powercycle", map[string]interface{}{"action power cycle": action_result})
 
 }
 
