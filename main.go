@@ -146,9 +146,12 @@ func main() {
 		Get a list of available kernels
 	*******************************************/
 
-	_, _, action_result := do.PerformDropletAction(int(droplets.DropletList[0].Id), "power_cycle")
-	displayMethodInfo("Droplet Action - Powercycle", map[string]interface{}{"action power cycle": action_result})
-
+	_, _, action_result, err := do.PerformDropletAction(int(droplets.DropletList[0].Id), "power_cycle")
+	if err != nil {
+		fmt.Println("Error performing droplet action:", err)
+	} else {
+		displayMethodInfo("Droplet Action - Powercycle", map[string]interface{}{"action power cycle": action_result})
+	}
 }
 
 func displayMethodInfo(title string, data map[string]interface{}) {

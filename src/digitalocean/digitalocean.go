@@ -52,6 +52,7 @@ func NewClient(api_token string) (c *DigitalOceanClient) {
 			"transfer_droplet":       {"POST", "images/%d/actions"},
 
 			"perform_droplet_action": {"POST", "droplets/%d/actions"},
+			"get_droplet_action":     {"GET", "droplets/%d/actions/%d"},
 		},
 	}
 }
@@ -138,9 +139,26 @@ func (c *DigitalOceanClient) doRequest(method string, request_headers map[string
 		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(int))
 		req, _ = http.NewRequest(c.Methods[method][0], url, bytes.NewBuffer([]byte(``)))
 
-	case num_params == 2 && method == "perform_droplet_action":
+	case num_params >= 2 && method == "perform_droplet_action":
 
-		jsonStr, err := json.Marshal(map[string]string{"type": params[1].(string)})
+		var jsonStr []byte
+		err := nil
+		action_type := params[1].(string)
+
+		if action_type == "resize" {
+			jsonStr, err = json.Marshal(map[string]string{"type": action_type, "size": params[2].(string)})
+		} else if action_type == "rebuild" {
+			jsonStr, err = json.Marshal(map[string]string{"type": action_type, "image": params[2].(string)})
+		} else if action_type == "rename" {
+			jsonStr, err = json.Marshal(map[string]string{"type": action_type, "name": params[2].(string)})
+		} else if action_type == "change_kernel" {
+			jsonStr, err = json.Marshal(map[string]string{"type": action_type, "kernel": params[2].(int)})
+		} else if action_type == "snapshot" {
+			jsonStr, err = json.Marshal(map[string]string{"type": action_type, "name": params[2].(string)})
+		} else {
+			jsonStr, err = json.Marshal(map[string]string{"type": action_type})
+		}
+
 		if err != nil {
 			fmt.Println("JSON Encoding Error:", err)
 			return "000", nil, []byte(`{}`)
@@ -148,6 +166,11 @@ func (c *DigitalOceanClient) doRequest(method string, request_headers map[string
 
 		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(int))
 		req, _ = http.NewRequest(c.Methods[method][0], url, bytes.NewBuffer(jsonStr))
+
+	case method == "get_droplet_action":
+
+		url = API_BASE + fmt.Sprintf(c.Methods[method][1], params[0].(int), params[1].(int))
+		req, _ = http.NewRequest(c.Methods[method][0], url, bytes.NewBuffer([]byte(``)))
 
 	default:
 		fmt.Println("\t*** Method unimplemented***")
@@ -293,22 +316,45 @@ func (c *DigitalOceanClient) DeleteDomain(domain string) (status string, resp_he
 
 // -------------------------- DROPLET ACTIONS -----------------------------------
 
-func (c *DigitalOceanClient) PerformDropletAction(droplet_id int, action string) (status string, resp_headers http.Header, result DropletAction) {
+func (c *DigitalOceanClient) PerformDropletAction(droplet_id int, action string, params ...interface{}) (status string, resp_headers http.Header, result DropletAction, err error) {
 
 	valid_actions := []string{
 		"disable_babckups", "reboot", "powercycle",
-		"shutdown", "poweroff", "poweron",
-		"", "",
+		"shutdown", "power_off", "power_on",
+		"restore", "password_reset", "resize",
+		"rebuild", "rename", "change_kernel",
+		"enable_ipv6", "enable_private_networking", "snapshot",
+	}
+
+	if ok, _ := valid_actions[action]; !ok {
+		return "000", nil, []byte(`{}`), error.Error{"Invalid Action!"}
 	}
 
 	token := fmt.Sprintf("Bearer %s", c.ApiToken)
 	headers := map[string]string{"Authorization": token, "Content-Type": "application/json"}
-	status, resp_headers, body := c.doRequest("perform_droplet_action", headers, droplet_id, action)
+
+	// IF the action is resize, then get the desired size for the params parameters
+	if action == "resize" {
+		status, resp_headers, body := c.doRequest("perform_droplet_action", headers, droplet_id, action, params[0].(string))
+	}
 
 	var json_resp DropletAction
 	json.Unmarshal(body, &json_resp)
 
-	return status, resp_headers, json_resp
+	return status, resp_headers, json_resp, nil
+}
+
+func (c *DigitalOceanClient) GetDropletAction(droplet_id int, action_id int) (status string, resp_headers http.Header, result DropletAction, err error) {
+
+	token := fmt.Sprintf("Bearer %s", c.ApiToken)
+	headers := map[string]string{"Authorization": token, "Content-Type": "application/json"}
+
+	status, resp_headers, body := c.doRequest("get_droplet_action", headers, droplet_id, action_id)
+
+	var json_resp DropletAction
+	json.Unmarshal(body, &json_resp)
+
+	return status, resp_headers, json_resp, nil
 }
 
 // -------------------------------------------------------------
